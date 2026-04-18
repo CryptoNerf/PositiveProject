@@ -11,12 +11,13 @@
 <!-- Open Graph (Telegram, Facebook, VK…) -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Positive Project 💖">
-<meta property="og:image" content="image/preview.png">
+<meta property="og:url" content="https://cryptonerf.github.io/PositiveProject/">
+<meta property="og:image" content="https://cryptonerf.github.io/PositiveProject/image/preview.png">
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Positive Project 💖">
-<meta name="twitter:image" content="image/preview.png">
+<meta name="twitter:image" content="https://cryptonerf.github.io/PositiveProject/image/preview.png">
 <style>
   :root {
     --pink:  #ff69b4;
@@ -47,7 +48,7 @@
     align-items: center;
   }
 
-  /* ---------- Collage background (fully visible) ---------- */
+  /* ---------- Collage background (квадраты, плотная сетка) ---------- */
   .bg-grid {
     position: fixed;
     inset: 0;
@@ -60,8 +61,8 @@
   }
   @media (max-width: 560px) {
     .bg-grid {
-      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-      grid-auto-rows: 90px;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      grid-auto-rows: 100px;
     }
   }
   .bg-grid img {
@@ -433,18 +434,21 @@
   function buildBackground() {
     const grid = document.getElementById("bgGrid");
     grid.innerHTML = "";
-    const tile = window.innerWidth <= 560 ? 90 : 140;
-    const cols = Math.ceil(window.innerWidth / tile);
+    const tile = window.innerWidth <= 560 ? 100 : 140;
+    const cols = Math.ceil(window.innerWidth / tile) + 1;
     const rows = Math.ceil(window.innerHeight / tile) + 1;
     const total = cols * rows;
-    const pool = [...IMAGES];
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
+    // случайно вперемешку: для каждого тайла случайная картинка,
+    // избегая повтора в соседней ячейке
+    let prev = -1;
     for (let i = 0; i < total; i++) {
+      let idx;
+      do {
+        idx = Math.floor(Math.random() * IMAGES.length);
+      } while (idx === prev && IMAGES.length > 1);
+      prev = idx;
       const img = document.createElement("img");
-      img.src = "image/" + pool[i % pool.length];
+      img.src = "image/" + IMAGES[idx];
       img.loading = "lazy";
       img.alt = "";
       grid.appendChild(img);
