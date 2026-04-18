@@ -54,20 +54,19 @@
     inset: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    grid-auto-rows: 140px;
     gap: 0;
     z-index: -1;
     overflow: hidden;
+    align-content: start;
   }
   @media (max-width: 560px) {
     .bg-grid {
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      grid-auto-rows: 100px;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     }
   }
   .bg-grid img {
     width: 100%;
-    height: 100%;
+    aspect-ratio: 1 / 1;
     object-fit: cover;
     display: block;
   }
@@ -434,7 +433,7 @@
   function buildBackground() {
     const grid = document.getElementById("bgGrid");
     grid.innerHTML = "";
-    const tile = window.innerWidth <= 560 ? 100 : 140;
+    const tile = window.innerWidth <= 560 ? 80 : 140;
     const cols = Math.ceil(window.innerWidth / tile) + 1;
     const rows = Math.ceil(window.innerHeight / tile) + 1;
     const total = cols * rows;
