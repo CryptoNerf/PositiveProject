@@ -457,6 +457,24 @@
       emoji: "🪽",
       file: "music/ангел.mp3",
       quote: "♪ Мне встретился ангел, у него самые добрые глаза ♪"
+    },
+    {
+      title: "Аквариум — 25 к 10",
+      emoji: "🌤️",
+      file: "music/25 к 10 - Аквариум.mp3",
+      quote: "♪ Я счастлив тем, как сложилось всё. Даже тем, что было не так ♪"
+    },
+    {
+      title: "Тальник — Аура",
+      emoji: "🏃",
+      file: "music/Аура - Тальник.mp3",
+      quote: "♪ Ускоряя свой шаг, я иду домой ♪"
+    },
+    {
+      title: "The Smiths — There Is a Light That Never Goes Out",
+      emoji: "🚘",
+      file: "music/The Smiths - There Is A Light That Never Goes Out (Official Audio) - The Smiths.mp3",
+      quote: "♪ There is a light and it never goes out ♪"
     }
   ];
 
@@ -494,29 +512,54 @@
   buildBackground();
 
   // ---------- Daily state ----------
-  function todayKey() {
+  function currentDayStamp() {
     const d = new Date();
-    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
   }
-  function yesterdayKey() {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+
+  function parseLegacyDayKey(dayKey) {
+    if (!dayKey || !/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) return null;
+    const [yy, mm, dd] = dayKey.split("-").map(Number);
+    return Math.floor(Date.UTC(yy, mm - 1, dd) / 86400000);
+  }
+
+  function dayStampToLegacyKey(dayStamp) {
+    const d = new Date(dayStamp * 86400000);
+    return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
   }
 
   function getState() {
+    let lastListenDay = Number.parseInt(localStorage.getItem("pp_lastListenDay") || "", 10);
+    if (!Number.isFinite(lastListenDay)) {
+      const migrated = parseLegacyDayKey(localStorage.getItem("pp_lastListen"));
+      if (Number.isFinite(migrated)) {
+        lastListenDay = migrated;
+        localStorage.setItem("pp_lastListenDay", String(migrated));
+      } else {
+        lastListenDay = null;
+      }
+    }
+
+    let streak = Number.parseInt(localStorage.getItem("pp_streak") || "0", 10);
+    if (!Number.isFinite(streak) || streak < 0) streak = 0;
+
     return {
-      lastListen: localStorage.getItem("pp_lastListen"),
-      streak: parseInt(localStorage.getItem("pp_streak") || "0", 10)
+      lastListenDay,
+      streak
     };
   }
+
   function markListened() {
     const state = getState();
+    const today = currentDayStamp();
     let streak = state.streak;
-    if (state.lastListen === yesterdayKey()) streak += 1;
-    else if (state.lastListen === todayKey()) { /* keep */ }
+    if (state.lastListenDay === today - 1) streak += 1;
+    else if (state.lastListenDay === today) { /* keep */ }
     else streak = 1;
-    localStorage.setItem("pp_lastListen", todayKey());
+
+    localStorage.setItem("pp_lastListenDay", String(today));
+    // keep legacy key to avoid breaking old clients that still read it
+    localStorage.setItem("pp_lastListen", dayStampToLegacyKey(today));
     localStorage.setItem("pp_streak", String(streak));
   }
   function updateStreakBadge() {
@@ -695,7 +738,7 @@
   // ---------- Init ----------
   updateStreakBadge();
   const state = getState();
-  if (state.lastListen === todayKey()) {
+  if (state.lastListenDay === currentDayStamp()) {
     renderAlreadyDone();
   } else {
     renderPlaylist(false);
