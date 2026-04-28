@@ -630,13 +630,32 @@
     });
     html += `</div>`;
     html += `<p class="message" id="msg">Выбери трек, который хочешь послушать</p>`;
-    html += `<audio id="player" preload="none"></audio>`;
+    html += `<audio id="player" preload="auto"></audio>`;
     main.innerHTML = html;
 
     const player = document.getElementById("player");
     const msg = document.getElementById("msg");
     const listened = new Set();
+    const preloaded = new Map();
     let currentIndex = -1;
+
+    function preloadSong(i) {
+      if (i < 0 || i >= SONGS.length || preloaded.has(i)) return;
+      const preloadAudio = new Audio();
+      preloadAudio.preload = "auto";
+      preloadAudio.src = SONGS[i].file;
+      preloadAudio.load();
+      preloaded.set(i, preloadAudio);
+    }
+
+    function preloadAround(i) {
+      preloadSong(i);
+      preloadSong((i + 1) % SONGS.length);
+      preloadSong((i + 2) % SONGS.length);
+    }
+
+    // Прогреваем первые треки, чтобы первый запуск был быстрее.
+    preloadAround(0);
 
     function setBtn(i, state) {
       const el = document.querySelector(`.song[data-i="${i}"]`);
@@ -671,6 +690,7 @@
       msg.textContent = SONGS[i].quote;
       player.src = SONGS[i].file;
       player.play().catch(()=>{});
+      preloadAround(i);
       if (!bonus) {
         markListened();
         updateStreakBadge();
