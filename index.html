@@ -108,7 +108,7 @@ audio { display:none; }
 #chat-fab.has-new::after { content:"●";position:absolute;top:-5px;right:-5px;color:var(--green);font-size:1rem;line-height:1; }
 
 /* ══ CHAT DRAWER ══ */
-#chat-drawer { position:fixed;inset:0;z-index:150;display:flex;flex-direction:column;background:var(--pink-bg);transform:translateY(100%);visibility:hidden;pointer-events:none;will-change:transform;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear .38s; }
+#chat-drawer { position:fixed;top:0;left:0;right:0;height:var(--app-height,100dvh);z-index:150;display:flex;flex-direction:column;background:var(--pink-bg);transform:translateY(100%);visibility:hidden;pointer-events:none;will-change:transform;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear .38s; }
 #chat-drawer.open { transform:translateY(0);visibility:visible;pointer-events:auto;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear 0s; }
 .chat-hdr { display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--safe-t)) 14px 10px;background:var(--pink);border-bottom:4px solid var(--ink);flex-shrink:0;color:#fff;font-size:1.05rem;font-weight:bold; }
 .chat-hdr span { font-size:1.05rem; }
@@ -180,7 +180,7 @@ audio { display:none; }
 #react-picker .rp-del { font-size:.9rem;color:#c0392b;border-color:#faa;background:#ffe0e0;padding:3px 7px;font-family:inherit; }
 
 /* ══ EMOJI BUILDER ══ */
-#emoji-builder { position:fixed;inset:0;z-index:160;display:flex;flex-direction:column;background:var(--pink-bg);transform:translateY(100%);visibility:hidden;pointer-events:none;will-change:transform;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear .38s; }
+#emoji-builder { position:fixed;top:0;left:0;right:0;height:var(--app-height,100dvh);z-index:160;display:flex;flex-direction:column;background:var(--pink-bg);transform:translateY(100%);visibility:hidden;pointer-events:none;will-change:transform;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear .38s; }
 #emoji-builder.open{transform:translateY(0);visibility:visible;pointer-events:auto;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear 0s;}
 .bldr-hdr { display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--safe-t)) 14px 10px;background:var(--blue);border-bottom:4px solid var(--ink);flex-shrink:0;color:#fff;font-size:1.05rem;font-weight:bold; }
 .bldr-hdr button { background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer;font-family:inherit;padding:2px 6px; }
@@ -330,6 +330,17 @@ audio { display:none; }
 <div id="lightbox"><img id="lb-img" src="" alt=""></div>
 
 <script>
+// ── iOS PWA: --app-height keeps drawers at exact screen height ──
+(function() {
+  function setH() {
+    document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
+  }
+  setH();
+  window.addEventListener('resize', setH);
+  // visualViewport fires when iOS keyboard changes size
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', setH);
+})();
+
 // ═══════════════════════════════════════════
 // FIREBASE CONFIG
 // ═══════════════════════════════════════════
@@ -459,6 +470,8 @@ chatTextEl.addEventListener("input", () => {
 });
 
 function openChat() {
+  const h = window.innerHeight + 'px';
+  document.documentElement.style.setProperty('--app-height', h);
   document.getElementById("chat-drawer").classList.add("open");
   document.getElementById("chat-fab").classList.remove("has-new");
   document.body.style.overflow = 'hidden';
@@ -1063,6 +1076,7 @@ document.getElementById("send-collage-btn").onclick = () => {
 };
 
 function openBuilder()  {
+  document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
   redraw();
   document.getElementById("emoji-builder").classList.add("open");
   document.body.style.overflow = 'hidden';
