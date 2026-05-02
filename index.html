@@ -331,13 +331,18 @@ audio { display:none; }
 
 <script>
 // ── iOS PWA: --app-height keeps drawers at exact screen height ──
+// Only ever grows — keyboard shrinks window.innerHeight but we keep the max.
 (function() {
+  let maxH = 0;
   function setH() {
-    document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
+    const h = window.innerHeight;
+    if (h > maxH) {
+      maxH = h;
+      document.documentElement.style.setProperty('--app-height', h + 'px');
+    }
   }
   setH();
   window.addEventListener('resize', setH);
-  // visualViewport fires when iOS keyboard changes size
   if (window.visualViewport) window.visualViewport.addEventListener('resize', setH);
 })();
 
@@ -360,6 +365,8 @@ const USERS = {
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth    = firebase.auth();
 const db      = firebase.firestore();
+// Offline persistence: messages load from cache instantly on PWA restart
+db.enablePersistence({ synchronizeTabs: false }).catch(() => {});
 const storage = firebase.storage();
 
 // ─── State ───────────────────────────────
@@ -367,6 +374,7 @@ let currentUser     = null;
 let currentUsername = "";
 let chatUnsub       = null;
 let presUnsub       = null;
+let listenStart     = 0; // ms — only ping messages newer than this
 let partnerLastRead = null;
 let partnerUid      = null;
 const msgMap  = new Map();   // docId → { wrap, ts, isMine, data }
@@ -470,8 +478,6 @@ chatTextEl.addEventListener("input", () => {
 });
 
 function openChat() {
-  const h = window.innerHeight + 'px';
-  document.documentElement.style.setProperty('--app-height', h);
   document.getElementById("chat-drawer").classList.add("open");
   document.getElementById("chat-fab").classList.remove("has-new");
   document.body.style.overflow = 'hidden';
@@ -486,6 +492,7 @@ function closeChat() {
 
 function startChatListener() {
   if (chatUnsub) return;
+  listenStart = Date.now();
   const list = document.getElementById("chat-messages");
   // clear old messages (keep scroll-down button)
   [...list.childNodes].forEach(n => { if (n.id !== "scroll-down") n.remove(); });
@@ -498,7 +505,9 @@ function startChatListener() {
         if (ch.type === "added") {
           const el = buildMsgEl(ch.doc.id, ch.doc.data());
           list.insertBefore(el, document.getElementById("scroll-down"));
-          if (!document.getElementById("chat-drawer").classList.contains("open")) {
+          const msgMs = ch.doc.data().createdAt ? ch.doc.data().createdAt.toDate().getTime() : 0;
+          const isNew = msgMs > listenStart;
+          if (isNew && !document.getElementById("chat-drawer").classList.contains("open")) {
             document.getElementById("chat-fab").classList.add("has-new");
             playPing();
           }
@@ -1076,7 +1085,6 @@ document.getElementById("send-collage-btn").onclick = () => {
 };
 
 function openBuilder()  {
-  document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
   redraw();
   document.getElementById("emoji-builder").classList.add("open");
   document.body.style.overflow = 'hidden';
