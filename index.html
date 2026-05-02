@@ -125,7 +125,7 @@ audio { display:none; }
 #hdr-menu-drop button:hover { background:var(--pink-bg); }
 
 /* messages */
-#chat-messages { flex:1;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch; }
+#chat-messages { flex:1;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:6px;overscroll-behavior:contain; }
 .date-div { text-align:center;font-size:.7rem;color:#999;padding:4px 0;flex-shrink:0;position:relative; }
 .date-div::before,.date-div::after { content:"";position:absolute;top:50%;height:1px;background:#ddd;width:calc(50% - 44px); }
 .date-div::before{left:0}.date-div::after{right:0}
@@ -461,11 +461,13 @@ chatTextEl.addEventListener("input", () => {
 function openChat() {
   document.getElementById("chat-drawer").classList.add("open");
   document.getElementById("chat-fab").classList.remove("has-new");
+  document.body.style.overflow = 'hidden';
   markRead();
   setTimeout(scrollBottom, 80);
 }
 function closeChat() {
   document.getElementById("chat-drawer").classList.remove("open");
+  document.body.style.overflow = '';
   clearTyping();
 }
 
@@ -996,7 +998,15 @@ cvs.addEventListener("pointermove", e => {
   }
 }, { passive:false });
 
-cvs.addEventListener("pointerup",     e => { activePointers.delete(e.pointerId); if (!activePointers.size) isDragging = false; });
+cvs.addEventListener("pointerup", e => {
+  activePointers.delete(e.pointerId);
+  if (!activePointers.size) {
+    isDragging = false;
+    // iOS blurs any input when touch ends on a non-input element.
+    // Re-focus after the browser's blur completes so keyboard stays open.
+    if (pendingPos !== null) setTimeout(() => emojiInput.focus(), 0);
+  }
+});
 cvs.addEventListener("pointercancel", e => { activePointers.delete(e.pointerId); isDragging = false; });
 cvs.setPointerCapture = cvs.setPointerCapture || (() => {});
 
@@ -1057,9 +1067,11 @@ document.getElementById("send-collage-btn").onclick = () => {
 function openBuilder()  {
   redraw();
   document.getElementById("emoji-builder").classList.add("open");
+  document.body.style.overflow = 'hidden';
 }
 function closeBuilder() {
   document.getElementById("emoji-builder").classList.remove("open");
+  document.body.style.overflow = '';
   closeFloatPicker();
   emojiInput.blur();
   pendingPos = null;
