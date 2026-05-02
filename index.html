@@ -330,16 +330,12 @@ audio { display:none; }
 <div id="lightbox"><img id="lb-img" src="" alt=""></div>
 
 <script>
-// ── iOS PWA: --app-height keeps drawers at exact screen height ──
-// Only ever grows — keyboard shrinks window.innerHeight but we keep the max.
+// ── --app-height: всегда точная высота видимой области ──
+// visualViewport.height корректно отражает: URL-строка, клавиатура, поворот.
 (function() {
-  let maxH = 0;
   function setH() {
-    const h = window.innerHeight;
-    if (h > maxH) {
-      maxH = h;
-      document.documentElement.style.setProperty('--app-height', h + 'px');
-    }
+    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty('--app-height', Math.round(h) + 'px');
   }
   setH();
   window.addEventListener('resize', setH);
@@ -449,7 +445,9 @@ function showLogin() {
 }
 function showApp() {
   document.getElementById("login-overlay").style.display = "none";
-  document.getElementById("main-container").style.display = "";
+  const mc = document.getElementById("main-container");
+  mc.style.display = "";
+  mc.style.visibility = ""; // сброс на случай если выход произошёл во время анимации
   document.getElementById("chat-fab").style.display = "flex";
   buildBackground();
   updateStreakBadge();
@@ -477,16 +475,40 @@ chatTextEl.addEventListener("input", () => {
   onTypingInput();
 });
 
+// ── Scroll lock (надёжный iOS-метод через position:fixed) ──
+let _lockDepth = 0, _lockScrollY = 0;
+function lockScroll() {
+  if (_lockDepth++ === 0) {
+    _lockScrollY = window.scrollY;
+    Object.assign(document.body.style, { position:'fixed', top:`-${_lockScrollY}px`, left:'0', right:'0', overflow:'hidden' });
+  }
+}
+function unlockScroll() {
+  if (--_lockDepth === 0) {
+    Object.assign(document.body.style, { position:'', top:'', left:'', right:'', overflow:'' });
+    window.scrollTo(0, _lockScrollY);
+  }
+}
+
 function openChat() {
+  // Прячем main прямо сейчас — иначе он виден над drawer во время slide-up анимации
+  document.getElementById("main-container").style.visibility = 'hidden';
   document.getElementById("chat-drawer").classList.add("open");
   document.getElementById("chat-fab").classList.remove("has-new");
-  document.body.style.overflow = 'hidden';
+  lockScroll();
   markRead();
   setTimeout(scrollBottom, 80);
 }
 function closeChat() {
   document.getElementById("chat-drawer").classList.remove("open");
-  document.body.style.overflow = '';
+  unlockScroll();
+  // Восстанавливаем main только после завершения close-анимации (380ms)
+  setTimeout(() => {
+    if (!document.getElementById("chat-drawer").classList.contains("open") &&
+        !document.getElementById("emoji-builder").classList.contains("open")) {
+      document.getElementById("main-container").style.visibility = '';
+    }
+  }, 420);
   clearTyping();
 }
 
@@ -1085,16 +1107,25 @@ document.getElementById("send-collage-btn").onclick = () => {
 };
 
 function openBuilder()  {
+  // main-container уже скрыт чатом; builder открывается поверх
+  document.getElementById("main-container").style.visibility = 'hidden';
+  lockScroll();
   redraw();
   document.getElementById("emoji-builder").classList.add("open");
-  document.body.style.overflow = 'hidden';
 }
 function closeBuilder() {
   document.getElementById("emoji-builder").classList.remove("open");
-  document.body.style.overflow = '';
+  unlockScroll();
   closeFloatPicker();
   emojiInput.blur();
   pendingPos = null;
+  // Восстанавливаем main только если чат тоже закрыт
+  setTimeout(() => {
+    if (!document.getElementById("chat-drawer").classList.contains("open") &&
+        !document.getElementById("emoji-builder").classList.contains("open")) {
+      document.getElementById("main-container").style.visibility = '';
+    }
+  }, 420);
 }
 
 // ═══════════════════════════════════════════
