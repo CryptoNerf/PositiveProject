@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Positive Project</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B8%3C/text%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.json">
@@ -98,7 +98,7 @@ audio { display:none; }
 .login-box::before { content:"";position:absolute;inset:6px;border:3px dashed var(--blue);pointer-events:none; }
 .login-box h1 { font-size:1.7rem;margin-bottom:4px; }
 .login-sub { font-size:.9rem;margin-bottom:14px; }
-.login-input { display:block;width:100%;padding:8px 12px;margin:8px 0;font-family:inherit;font-size:1rem;border:3px solid var(--blue);background:#fff;outline:none; }
+.login-input { display:block;width:100%;padding:8px 12px;margin:8px 0;font-family:inherit;font-size:16px;border:3px solid var(--blue);background:#fff;outline:none; }
 .login-input:focus { border-color:var(--pink); }
 .login-error { min-height:1.4em;color:#c0392b;font-size:.85rem;margin-top:6px;font-weight:bold; }
 
@@ -108,14 +108,21 @@ audio { display:none; }
 #chat-fab.has-new::after { content:"●";position:absolute;top:-5px;right:-5px;color:var(--green);font-size:1rem;line-height:1; }
 
 /* ══ CHAT DRAWER ══ */
-#chat-drawer { position:fixed;inset:0;z-index:150;display:flex;flex-direction:column;background:var(--pink-bg);transform:translateY(100%);transition:transform .3s ease; }
-#chat-drawer.open { transform:translateY(0); }
+#chat-drawer { position:fixed;inset:0;z-index:150;display:flex;flex-direction:column;background:var(--pink-bg);transform:translateY(100%);visibility:hidden;pointer-events:none;will-change:transform;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear .38s; }
+#chat-drawer.open { transform:translateY(0);visibility:visible;pointer-events:auto;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear 0s; }
 .chat-hdr { display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--safe-t)) 14px 10px;background:var(--pink);border-bottom:4px solid var(--ink);flex-shrink:0;color:#fff;font-size:1.05rem;font-weight:bold; }
 .chat-hdr span { font-size:1.05rem; }
 .chat-hdr button { background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer;font-family:inherit;padding:2px 6px;opacity:.9; }
 .chat-hdr button:hover { opacity:1; }
 .chat-hdr .online-dot { width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block;margin-right:4px; }
 .chat-hdr .online-dot.on { background:var(--green); }
+/* ⋯ settings dropdown */
+.hdr-menu-wrap { position:relative; }
+#hdr-menu-drop { display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:3px solid var(--pink);box-shadow:3px 3px 0 rgba(0,0,0,.15);z-index:10;min-width:130px;flex-direction:column; }
+#hdr-menu-drop.open { display:flex; }
+#hdr-menu-drop button { background:none;border:none;border-bottom:1px solid #fdd;color:var(--ink);font-family:inherit;font-size:.9rem;padding:10px 14px;cursor:pointer;text-align:left; }
+#hdr-menu-drop button:last-child { border-bottom:none; }
+#hdr-menu-drop button:hover { background:var(--pink-bg); }
 
 /* messages */
 #chat-messages { flex:1;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch; }
@@ -124,9 +131,10 @@ audio { display:none; }
 .date-div::before{left:0}.date-div::after{right:0}
 .msg-wrap { display:flex;flex-direction:column; }
 .msg-wrap.mine{align-items:flex-end}.msg-wrap.theirs{align-items:flex-start}
-.msg-bubble { max-width:80%;padding:8px 12px;font-size:.92rem;line-height:1.4;word-break:break-word;background:#fff;cursor:default; }
-.msg-wrap.mine   .msg-bubble { border:3px double var(--pink); }
-.msg-wrap.theirs .msg-bubble { border:3px double var(--blue); }
+.msg-bubble { max-width:80%;padding:8px 12px;font-size:.92rem;line-height:1.4;word-break:break-word;background:#fff;cursor:default;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none; }
+/* Emile = blue, Mari = pink — regardless of who's viewing */
+.from-Emile .msg-bubble { border:3px double var(--blue); background:var(--blue-bg); }
+.from-Mari  .msg-bubble { border:3px double var(--pink); background:var(--pink-bg); }
 .msg-bubble img { max-width:100%;max-height:240px;display:block;cursor:zoom-in;border:2px solid #ddd;margin-top:2px; }
 .msg-meta { font-size:.66rem;color:#aaa;margin-top:2px;padding:0 4px;display:flex;align-items:center;gap:4px; }
 .msg-wrap.theirs .msg-meta { color:#888;font-weight:bold; }
@@ -153,12 +161,16 @@ audio { display:none; }
 .chat-bar { display:flex;gap:6px;padding:8px 10px calc(8px + var(--safe-b));background:#fff;border-top:4px solid var(--pink);flex-shrink:0;align-items:flex-end; }
 .ci-btn { width:38px;height:38px;flex-shrink:0;font-size:1.15rem;background:var(--blue-bg);border:3px outset var(--blue);cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;justify-content:center; }
 .ci-btn:active{border-style:inset}
-#chat-text { flex:1;min-width:0;padding:7px 10px;font-family:inherit;font-size:.9rem;border:3px solid var(--blue);outline:none;background:#fff;resize:none;max-height:100px;overflow-y:auto;line-height:1.3; }
+#chat-text { flex:1;min-width:0;padding:7px 10px;font-family:inherit;font-size:16px;border:3px solid var(--blue);outline:none;background:#fff;resize:none;max-height:100px;overflow-y:auto;line-height:1.3; }
 #chat-text:focus{border-color:var(--pink)}
 #chat-send-btn { width:38px;height:38px;flex-shrink:0;font-size:1rem;font-family:inherit;font-weight:bold;background:var(--pink);color:#fff;border:3px outset var(--pink);cursor:pointer;display:flex;align-items:center;justify-content:center; }
 #chat-send-btn:active{border-style:inset}
 .upload-ind { align-self:flex-end;font-size:.78rem;color:var(--pink);padding:5px 10px;border:2px dashed var(--pink);animation:pulse 1s infinite; }
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ══ EMOJI HINT TOAST ══ */
+#emoji-hint { position:fixed;z-index:270;background:rgba(0,0,0,.72);color:#fff;font-size:.82rem;padding:6px 12px;pointer-events:none;opacity:0;transition:opacity .2s;white-space:nowrap;font-family:"Chalkboard SE","Comic Sans MS",cursive; }
+#emoji-hint.show { opacity:1; }
 
 /* ══ REACT PICKER ══ */
 #react-picker { position:fixed;z-index:260;background:#fff;border:3px solid var(--pink);padding:6px 8px;display:none;gap:4px;box-shadow:3px 3px 0 rgba(0,0,0,.15);border-radius:0; }
@@ -168,22 +180,10 @@ audio { display:none; }
 #react-picker .rp-del { font-size:.9rem;color:#c0392b;border-color:#faa;background:#ffe0e0;padding:3px 7px;font-family:inherit; }
 
 /* ══ EMOJI BUILDER ══ */
-#emoji-builder { position:fixed;inset:0;z-index:160;display:flex;flex-direction:column;background:var(--pink-bg);transform:translateY(100%);transition:transform .3s ease; }
-#emoji-builder.open{transform:translateY(0)}
+#emoji-builder { position:fixed;inset:0;z-index:160;display:flex;flex-direction:column;background:var(--pink-bg);transform:translateY(100%);visibility:hidden;pointer-events:none;will-change:transform;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear .38s; }
+#emoji-builder.open{transform:translateY(0);visibility:visible;pointer-events:auto;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear 0s;}
 .bldr-hdr { display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--safe-t)) 14px 10px;background:var(--blue);border-bottom:4px solid var(--ink);flex-shrink:0;color:#fff;font-size:1.05rem;font-weight:bold; }
 .bldr-hdr button { background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer;font-family:inherit;padding:2px 6px; }
-.emoji-cats { display:flex;gap:2px;padding:6px 8px 0;background:#fff;flex-shrink:0;overflow-x:auto; }
-.emoji-cats::-webkit-scrollbar{display:none}
-.e-cat { padding:4px 10px;font-size:1.1rem;background:#fff;border:2px solid #eee;cursor:pointer;flex-shrink:0;font-family:"Apple Color Emoji","Segoe UI Emoji",serif;transition:background .1s; }
-.e-cat.active{border-color:var(--blue);background:var(--blue-bg)}
-.emoji-recent-row { display:flex;align-items:center;gap:3px;padding:5px 8px;background:#f8f8f8;border-bottom:2px dashed #e0e0e0;overflow-x:auto;flex-shrink:0;min-height:46px; }
-.emoji-recent-row::-webkit-scrollbar{display:none}
-.emoji-recent-row .rr-label { font-size:.6rem;color:#bbb;flex-shrink:0;white-space:nowrap;padding-right:4px; }
-.emoji-palette { display:flex;flex-wrap:wrap;gap:3px;padding:8px;background:#fff;border-bottom:3px dotted var(--blue);max-height:110px;overflow-y:auto;flex-shrink:0; }
-.emoji-palette::-webkit-scrollbar{width:4px}.emoji-palette::-webkit-scrollbar-thumb{background:#ddd}
-.ep-btn,.er-btn { width:36px;height:36px;font-size:1.35rem;flex-shrink:0;border:2px solid #eee;background:#fff;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;font-family:"Apple Color Emoji","Segoe UI Emoji",serif; }
-.ep-btn:hover,.ep-btn:active,.er-btn:hover,.er-btn:active{background:var(--blue-bg);border-color:var(--blue)}
-
 /* builder toolbar */
 .bldr-toolbar { display:flex;gap:6px;padding:7px 10px;background:#fff;border-bottom:2px dotted var(--blue);align-items:center;flex-shrink:0;flex-wrap:wrap; }
 .bldr-toolbar label { font-size:.75rem;color:#888;white-space:nowrap; }
@@ -266,8 +266,13 @@ audio { display:none; }
       <span class="online-dot" id="partner-dot"></span>
       <span>💬 Чат</span>
     </div>
-    <div style="display:flex;gap:2px">
-      <button id="logout-btn" title="Выйти">🚪</button>
+    <div style="display:flex;gap:2px;align-items:center">
+      <div class="hdr-menu-wrap">
+        <button id="hdr-menu-btn" title="Меню">⋯</button>
+        <div id="hdr-menu-drop">
+          <button id="logout-btn">🚪 Выйти</button>
+        </div>
+      </div>
       <button id="close-chat-btn" title="Закрыть">✕</button>
     </div>
   </div>
@@ -291,11 +296,6 @@ audio { display:none; }
     <span>🎨 Коллаж из эмодзи</span>
     <button id="close-builder-btn">✕</button>
   </div>
-  <div class="emoji-cats" id="emoji-cats"></div>
-  <div class="emoji-recent-row" id="emoji-recent">
-    <span class="rr-label">Недавние</span>
-  </div>
-  <div class="emoji-palette" id="emoji-palette"></div>
   <div class="bldr-toolbar">
     <label>Размер</label>
     <input type="range" id="size-slider" min="20" max="120" step="4" value="52">
@@ -315,6 +315,13 @@ audio { display:none; }
     <button id="send-collage-btn">Отправить 💌</button>
   </div>
 </div>
+
+<!-- hidden input for native emoji keyboard -->
+<input type="text" id="emoji-input"
+  autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+  style="position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:50%;left:50%;font-size:16px;border:none;outline:none;background:transparent">
+
+<div id="emoji-hint">⌘ Ctrl+Space → выбери эмодзи</div>
 
 <!-- ══ REACT PICKER ══ -->
 <div id="react-picker"></div>
@@ -401,7 +408,17 @@ async function doLogin() {
   } finally { btn.disabled = false; btn.textContent = "Войти 💕"; }
 }
 
-document.getElementById("logout-btn").onclick = async () => { closeChat(); await auth.signOut(); };
+document.getElementById("logout-btn").onclick = async () => {
+  closeDrop();
+  closeChat();
+  await auth.signOut();
+};
+
+const hdrMenuBtn = document.getElementById("hdr-menu-btn");
+const hdrMenuDrop = document.getElementById("hdr-menu-drop");
+function closeDrop() { hdrMenuDrop.classList.remove("open"); }
+hdrMenuBtn.onclick = (e) => { e.stopPropagation(); hdrMenuDrop.classList.toggle("open"); };
+document.addEventListener("click", (e) => { if (!hdrMenuDrop.contains(e.target)) closeDrop(); });
 
 function showLogin() {
   document.getElementById("login-overlay").style.display = "flex";
@@ -490,8 +507,9 @@ function stopChatListener() {
 
 // ─ Message element ─────────────────────────
 function buildMsgEl(docId, data) {
-  const isMine = data.username === currentUsername;
-  const ts     = data.createdAt ? data.createdAt.toDate() : null;
+  const isMine     = data.username === currentUsername;
+  const senderClass = "from-" + (data.username || "Emile");
+  const ts         = data.createdAt ? data.createdAt.toDate() : null;
 
   // date divider
   const dk = ts ? ts.toDateString() : "";
@@ -505,7 +523,7 @@ function buildMsgEl(docId, data) {
   }
 
   const wrap   = document.createElement("div");
-  wrap.className = "msg-wrap " + (isMine ? "mine" : "theirs");
+  wrap.className = "msg-wrap " + (isMine ? "mine" : "theirs") + " " + senderClass;
   const bubble = document.createElement("div");
   bubble.className = "msg-bubble";
 
@@ -816,67 +834,54 @@ function openLightbox(url) { document.getElementById("lb-img").src = url; docume
 // ═══════════════════════════════════════════
 // EMOJI BUILDER
 // ═══════════════════════════════════════════
-const EMOJI_CATS = [
-  { icon:"❤️", label:"Любовь",  list:["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🩷","🩵","💕","💞","💖","💗","💓","💘","💝","💟","❣️","🫀","😍","🥰","😘","🫶","💌","💍","💑","🫂","🥂","💏"] },
-  { icon:"😊", label:"Смайлы",  list:["😊","😄","😂","🤣","🥹","😇","🥳","😎","🤩","😻","🥺","🤭","🤪","😜","😝","🙈","🙉","🙊","🫠","😏","😌","😴","😭","😱","🤗","🫡","😤","🤑","😋","🤤"] },
-  { icon:"🐱", label:"Животные",list:["🐱","🐶","🦊","🐻","🐼","🐨","🐸","🦄","🐝","🦋","🐧","🦆","🐹","🐭","🐯","🦁","🐰","🦔","🐿️","🐾","🐠","🐬","🦭","🐙","🦀","🐳","🦅","🦜","🐊","🦋"] },
-  { icon:"🌸", label:"Природа", list:["🌸","🌺","🌹","🌻","🌷","🌿","🍀","🌱","🌾","🍁","🌈","☀️","🌙","⭐","🌟","✨","💫","⚡","🌊","❄️","🌴","🍄","🌵","🪸","🌬️","🌍","🌙","☁️","🌧️","🌊"] },
-  { icon:"🍓", label:"Еда",     list:["🍓","🍒","🍑","🍋","🍎","🍊","🫐","🍇","🍰","🧁","🍩","🍪","🍫","🍬","🍭","🧃","🫧","🧋","☕","🍵","🍕","🍔","🌮","🍜","🍣","🍦","🍿","🥤","🫖","🥐"] },
-  { icon:"🎀", label:"Разное",  list:["🎀","🎁","🎊","🎉","🎈","🎵","🎶","🧸","🪄","💎","👑","🌂","🎠","🎯","🎮","🪩","🪞","🎭","🏆","🎨","✏️","📚","🔑","💐","🌟","🪐","🚀","🎪","🛸","💝"] }
-];
 
-const RECENT_KEY = "pp_recent";
-const MAX_RECENT = 20;
-
-function loadRecent() {
-  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); }
-  catch(_) { return []; }
+// ─ Emoji hint toast (desktop only) ─────────
+let hintTimer;
+function showEmojiHint(clientX, clientY) {
+  const el = document.getElementById("emoji-hint");
+  el.style.left = (clientX + 12) + "px";
+  el.style.top  = (clientY - 36) + "px";
+  el.classList.add("show");
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => el.classList.remove("show"), 2200);
 }
-function saveRecent(em) {
-  let r = loadRecent().filter(x => x !== em);
-  r.unshift(em);
-  r = r.slice(0, MAX_RECENT);
-  localStorage.setItem(RECENT_KEY, JSON.stringify(r));
-  renderRecent();
+function closeFloatPicker() {} // no-op, kept so closeBuilder() doesn't break
+
+// Touch device detection
+const isTouch = () => navigator.maxTouchPoints > 0 || "ontouchstart" in window;
+
+// Where to place the next emoji tapped from keyboard
+let pendingPos = null;
+
+// Extract individual grapheme-cluster emojis from a string
+function extractEmojis(str) {
+  if (!str) return [];
+  if (typeof Intl !== "undefined" && Intl.Segmenter) {
+    const seg = new Intl.Segmenter("en", { granularity: "grapheme" });
+    return [...seg.segment(str)]
+      .map(s => s.segment)
+      .filter(g => /\p{Emoji}/u.test(g) && g.trim() !== "");
+  }
+  // fallback regex for older Safari
+  return [...(str.match(/\p{Emoji_Presentation}[\p{Emoji_Modifier}️⃣]?(?:‍\p{Emoji_Presentation}[\p{Emoji_Modifier}️⃣]?)*/gu) || [])];
 }
 
-let activeCat = 0;
-
-function renderCats() {
-  const container = document.getElementById("emoji-cats");
-  container.innerHTML = "";
-  EMOJI_CATS.forEach((cat, i) => {
-    const b = document.createElement("button");
-    b.className = "e-cat" + (i === activeCat ? " active" : "");
-    b.textContent = cat.icon; b.title = cat.label;
-    b.onclick = () => { activeCat = i; renderCats(); renderPalette(); };
-    container.appendChild(b);
+// Native emoji keyboard input
+const emojiInput = document.getElementById("emoji-input");
+emojiInput.addEventListener("input", function () {
+  const val = this.value;
+  this.value = "";
+  const emjs = extractEmojis(val);
+  if (!emjs.length) return;
+  emjs.forEach((char, i) => {
+    const cx = pendingPos ? pendingPos.x + i * 18 : 70 + Math.random() * (cvs.width  - 140);
+    const cy = pendingPos ? pendingPos.y + i * 18 : 70 + Math.random() * (cvs.height - 140);
+    emojis.push({ char, cx, cy, size: 56, rot: 0 });
+    selIdx = emojis.length - 1;
   });
-}
-
-function renderPalette() {
-  const pal = document.getElementById("emoji-palette");
-  pal.innerHTML = "";
-  EMOJI_CATS[activeCat].list.forEach(em => {
-    const b = document.createElement("button");
-    b.className = "ep-btn"; b.textContent = em;
-    b.onclick = () => { addEmojiToCanvas(em); saveRecent(em); };
-    pal.appendChild(b);
-  });
-}
-
-function renderRecent() {
-  const row = document.getElementById("emoji-recent");
-  row.innerHTML = `<span class="rr-label">Недавние</span>`;
-  loadRecent().forEach(em => {
-    const b = document.createElement("button");
-    b.className = "er-btn"; b.textContent = em;
-    b.onclick = () => { addEmojiToCanvas(em); saveRecent(em); };
-    row.appendChild(b);
-  });
-}
-
-renderCats(); renderPalette(); renderRecent();
+  pendingPos = null;
+  redraw(); updateSlider();
+});
 
 // ─ Canvas ──────────────────────────────────
 const cvs = document.getElementById("collage-canvas");
@@ -891,6 +896,19 @@ function redraw() {
   ctx.clearRect(0, 0, cvs.width, cvs.height);
   ctx.fillStyle = canvasBg;
   ctx.fillRect(0, 0, cvs.width, cvs.height);
+  if (emojis.length === 0) {
+    ctx.save();
+    ctx.textAlign    = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle    = "rgba(0,0,0,0.18)";
+    ctx.font         = "18px 'Chalkboard SE','Comic Sans MS',cursive";
+    ctx.fillText("Нажми на холст",       cvs.width/2, cvs.height/2 - 24);
+    ctx.fillText("и выбери эмодзи ✌️",  cvs.width/2, cvs.height/2 + 4);
+    ctx.font      = "42px serif";
+    ctx.fillStyle = "rgba(0,0,0,0.09)";
+    ctx.fillText("🎨", cvs.width/2, cvs.height/2 + 64);
+    ctx.restore();
+  }
   emojis.forEach((e, i) => {
     ctx.save();
     ctx.translate(e.cx, e.cy);
@@ -939,10 +957,19 @@ cvs.addEventListener("pointerdown", e => {
     const {x,y} = cvsXY(e.clientX, e.clientY);
     const hit = hitTest(x, y);
     if (hit !== -1) {
+      // Select & start dragging existing emoji
       const [em] = emojis.splice(hit, 1); emojis.push(em);
       selIdx = emojis.length-1; isDragging = true;
       dOff = { x: x-em.cx, y: y-em.cy };
-    } else { selIdx = -1; isDragging = false; }
+    } else {
+      // Tap on empty space — remember canvas position
+      selIdx = -1; isDragging = false;
+      pendingPos = { x, y };
+      // Always focus input — on iOS opens emoji keyboard, on Mac enables Ctrl+⌘+Space
+      emojiInput.focus();
+      // On desktop show hint with shortcut
+      if (!isTouch()) showEmojiHint(e.clientX, e.clientY);
+    }
     redraw(); updateSlider();
   } else if (activePointers.size === 2 && selIdx !== -1) {
     const pts = [...activePointers.values()];
@@ -1027,8 +1054,16 @@ document.getElementById("send-collage-btn").onclick = () => {
   }, "image/png");
 };
 
-function openBuilder()  { redraw(); document.getElementById("emoji-builder").classList.add("open"); }
-function closeBuilder() { document.getElementById("emoji-builder").classList.remove("open"); }
+function openBuilder()  {
+  redraw();
+  document.getElementById("emoji-builder").classList.add("open");
+}
+function closeBuilder() {
+  document.getElementById("emoji-builder").classList.remove("open");
+  closeFloatPicker();
+  emojiInput.blur();
+  pendingPos = null;
+}
 
 // ═══════════════════════════════════════════
 // BACKGROUND
