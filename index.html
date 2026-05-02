@@ -242,7 +242,7 @@ audio { display:none; }
            autocomplete="username" autocapitalize="none" spellcheck="false">
     <input class="login-input" id="login-pass" type="password"
            placeholder="Пароль" autocomplete="current-password">
-    <button class="big-btn" id="login-btn" style="margin:12px auto 0">Войти 💕</button>
+    <button class="big-btn" id="login-btn" style="margin:12px auto 0">Войти!</button>
     <p class="login-error" id="login-error"></p>
   </div>
 </div>
@@ -319,7 +319,7 @@ audio { display:none; }
 <!-- hidden input for native emoji keyboard -->
 <input type="text" id="emoji-input"
   autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
-  style="position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:50%;left:50%;font-size:16px;border:none;outline:none;background:transparent">
+  style="position:fixed;opacity:0;width:1px;height:1px;top:50%;left:50%;font-size:16px;border:none;outline:none;background:transparent">
 
 <div id="emoji-hint">⌘ Ctrl+Space → выбери эмодзи</div>
 
@@ -405,7 +405,7 @@ async function doLogin() {
     } else {
       errEl.textContent = err.message || "Ошибка входа.";
     }
-  } finally { btn.disabled = false; btn.textContent = "Войти 💕"; }
+  } finally { btn.disabled = false; btn.textContent = "Войти!"; }
 }
 
 document.getElementById("logout-btn").onclick = async () => {
@@ -998,16 +998,14 @@ cvs.addEventListener("pointermove", e => {
   }
 }, { passive:false });
 
-cvs.addEventListener("pointerup", e => {
-  activePointers.delete(e.pointerId);
-  if (!activePointers.size) {
-    isDragging = false;
-    // iOS blurs any input when touch ends on a non-input element.
-    // Re-focus after the browser's blur completes so keyboard stays open.
-    if (pendingPos !== null) setTimeout(() => emojiInput.focus(), 0);
-  }
-});
+cvs.addEventListener("pointerup",     e => { activePointers.delete(e.pointerId); if (!activePointers.size) isDragging = false; });
 cvs.addEventListener("pointercancel", e => { activePointers.delete(e.pointerId); isDragging = false; });
+
+// iOS blurs focused inputs when a touch ends on a non-input element.
+// preventDefault() on touchend blocks that cleanup, keeping keyboard open.
+cvs.addEventListener("touchend", e => {
+  if (pendingPos !== null && !isDragging) e.preventDefault();
+}, { passive: false });
 cvs.setPointerCapture = cvs.setPointerCapture || (() => {});
 
 function addEmojiToCanvas(char) {
