@@ -92,6 +92,13 @@ audio { display:none; }
 .done-screen h2{font-size:1.4rem;margin:6px 0;color:var(--pink)}.done-screen p{font-size:.95rem;margin:6px 0}
 .footer-note { text-align:center;margin-top:10px;font-size:.8rem;border-top:3px dotted var(--blue);padding-top:8px; }
 
+/* ══ SPLASH (показываем, пока Firebase восстанавливает сессию) ══ */
+#splash { position:fixed;inset:0;z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--pink-bg);transition:opacity .35s ease; }
+#splash.hidden { opacity:0;pointer-events:none;visibility:hidden;transition:opacity .35s ease,visibility 0s linear .35s; }
+#splash .splash-heart { font-size:3.2rem;animation:bounce 1.2s ease-in-out infinite; }
+#splash .splash-title { color:var(--pink);font-size:1.5rem;font-weight:bold;text-shadow:2px 2px 0 var(--blue);animation:wiggle 3s ease-in-out infinite; }
+#splash .splash-sub { color:var(--blue);font-size:.85rem; }
+
 /* ══ LOGIN ══ */
 #login-overlay { position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(255,236,244,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px); }
 .login-box { width:100%;max-width:340px;background:#fff url("image/клеткафон.jpg") repeat;border:6px ridge var(--pink);padding:24px 20px 20px;position:relative;text-align:center; }
@@ -232,8 +239,15 @@ audio { display:none; }
 <div class="bg-grid" id="bgGrid"></div>
 <div class="hearts" id="heartsLayer"></div>
 
+<!-- ══ SPLASH ══ -->
+<div id="splash">
+  <div class="splash-heart">💖</div>
+  <div class="splash-title">~ Positive Project ~</div>
+  <div class="splash-sub">Загружаем... ✨</div>
+</div>
+
 <!-- ══ LOGIN ══ -->
-<div id="login-overlay">
+<div id="login-overlay" style="display:none">
   <div class="login-box">
     <h1>~ Positive Project ~</h1>
     <p class="login-sub">Добро пожаловать ✨</p>
@@ -301,6 +315,7 @@ audio { display:none; }
     <input type="range" id="size-slider" min="20" max="120" step="4" value="52">
     <button class="rot-btn" id="rot-l-btn" title="Повернуть влево">↺</button>
     <button class="rot-btn" id="rot-r-btn" title="Повернуть вправо">↻</button>
+    <button class="rot-btn" id="flip-x-btn" title="Отразить по горизонтали">⇋</button>
     <label>Фон</label>
     <input type="color" id="bg-color" value="#ffffff" title="Цвет фона">
   </div>
@@ -379,7 +394,18 @@ let lastDateKey = "";
 // ═══════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════
+// Подстраховка: если Firebase почему-то не ответит, через 12с всё равно убираем
+// заставку и показываем форму входа, чтобы не зависнуть на splash навсегда.
+const splashFallback = setTimeout(() => {
+  document.getElementById("splash").classList.add("hidden");
+  if (!currentUser) showLogin();
+}, 12000);
+
 auth.onAuthStateChanged(user => {
+  // Сессия восстановлена (или точно отсутствует) — убираем заставку.
+  // До этого момента пользователь видит splash, а не форму входа.
+  clearTimeout(splashFallback);
+  document.getElementById("splash").classList.add("hidden");
   if (user) {
     currentUser = user;
     const key = user.email.split("@")[0];
@@ -497,6 +523,8 @@ function openChat() {
   document.getElementById("chat-fab").classList.remove("has-new");
   lockScroll();
   markRead();
+  pinBottom = true;          // при открытии всегда показываем конец переписки
+  scrollBottom();
   setTimeout(scrollBottom, 80);
 }
 function closeChat() {
@@ -577,6 +605,10 @@ function buildMsgEl(docId, data) {
     const img = document.createElement("img");
     img.src = data.imageUrl; img.loading = "lazy"; img.alt = "картинка";
     img.onclick = () => openLightbox(data.imageUrl);
+    // Картинки грузятся асинхронно и увеличивают высоту списка уже ПОСЛЕ того, как
+    // мы прокрутили вниз — из-за этого чат «открывается в середине». Пока прилипли
+    // к низу — до-прокручиваем после загрузки каждой картинки.
+    img.addEventListener("load", () => { if (pinBottom) scrollBottom(); });
     bubble.appendChild(img);
   }
   if (data.text) {
@@ -653,9 +685,13 @@ function refreshAllTicks() {
 
 // ─ Scroll ──────────────────────────────────
 const scrollDownBtn = document.getElementById("scroll-down");
+// Пока true — держим список «прилипшим» к низу (в т.ч. пока догружаются картинки).
+// Сбрасывается, как только пользователь сам прокручивает вверх.
+let pinBottom = true;
 document.getElementById("chat-messages").addEventListener("scroll", () => {
   const el = document.getElementById("chat-messages");
   const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+  pinBottom = atBottom;
   scrollDownBtn.classList.toggle("show", !atBottom);
 });
 scrollDownBtn.onclick = () => scrollBottom(true);
@@ -922,7 +958,7 @@ emojiInput.addEventListener("input", function () {
   emjs.forEach((char, i) => {
     const cx = pendingPos ? pendingPos.x + i * 18 : 70 + Math.random() * (cvs.width  - 140);
     const cy = pendingPos ? pendingPos.y + i * 18 : 70 + Math.random() * (cvs.height - 140);
-    emojis.push({ char, cx, cy, size: 56, rot: 0 });
+    emojis.push({ char, cx, cy, size: 56, rot: 0, flipX: false });
     selIdx = emojis.length - 1;
   });
   pendingPos = null;
@@ -948,11 +984,11 @@ function redraw() {
     ctx.textBaseline = "middle";
     ctx.fillStyle    = "rgba(0,0,0,0.18)";
     ctx.font         = "18px 'Chalkboard SE','Comic Sans MS',cursive";
-    ctx.fillText("Нажми на холст",       cvs.width/2, cvs.height/2 - 24);
-    ctx.fillText("и выбери эмодзи ✌️",  cvs.width/2, cvs.height/2 + 4);
-    ctx.font      = "42px serif";
-    ctx.fillStyle = "rgba(0,0,0,0.09)";
-    ctx.fillText("🎨", cvs.width/2, cvs.height/2 + 64);
+    ctx.fillText("Нажми на холст",    cvs.width/2, cvs.height/2 - 22);
+    ctx.fillText("и выбери эмодзи",   cvs.width/2, cvs.height/2 + 4);
+    ctx.font      = "40px 'Apple Color Emoji','Segoe UI Emoji',serif";
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    ctx.fillText("🎨", cvs.width/2, cvs.height/2 + 58);
     ctx.restore();
   }
   emojis.forEach((e, i) => {
@@ -962,7 +998,19 @@ function redraw() {
     ctx.font = e.size + "px 'Apple Color Emoji','Segoe UI Emoji',serif";
     ctx.textAlign    = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(e.char, 0, 0);
+    // Часть эмодзи (✍️, ✌️ и др. с variation-selector) рисуется со смещением от
+    // геометрического центра — глиф «уезжает» из рамки выделения и хуже ловится при
+    // перетаскивании. Центрируем по фактическим границам нарисованного глифа.
+    const m = ctx.measureText(e.char);
+    const offX = (isFinite(m.actualBoundingBoxLeft) && isFinite(m.actualBoundingBoxRight))
+      ? (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2 : 0;
+    const offY = (isFinite(m.actualBoundingBoxAscent) && isFinite(m.actualBoundingBoxDescent))
+      ? (m.actualBoundingBoxDescent - m.actualBoundingBoxAscent) / 2 : 0;
+    // Отражение по горизонтали: scale(-1,1) вокруг центра глифа (ink уже в 0,0).
+    ctx.save();
+    if (e.flipX) ctx.scale(-1, 1);
+    ctx.fillText(e.char, -offX, -offY);
+    ctx.restore();
     if (i === selIdx) {
       const r = e.size * 0.58;
       ctx.strokeStyle = "rgba(255,105,180,.85)";
@@ -1055,7 +1103,7 @@ cvs.setPointerCapture = cvs.setPointerCapture || (() => {});
 function addEmojiToCanvas(char) {
   const cx = 70 + Math.random() * (cvs.width  - 140);
   const cy = 70 + Math.random() * (cvs.height - 140);
-  emojis.push({ char, cx, cy, size:52, rot:0 });
+  emojis.push({ char, cx, cy, size:52, rot:0, flipX:false });
   selIdx = emojis.length-1;
   redraw(); updateSlider();
 }
@@ -1078,6 +1126,9 @@ document.getElementById("rot-l-btn").onclick = () => {
 };
 document.getElementById("rot-r-btn").onclick = () => {
   if (selIdx !== -1) { emojis[selIdx].rot = (emojis[selIdx].rot||0) + Math.PI/12; redraw(); }
+};
+document.getElementById("flip-x-btn").onclick = () => {
+  if (selIdx !== -1) { emojis[selIdx].flipX = !emojis[selIdx].flipX; redraw(); }
 };
 document.getElementById("bg-color").oninput = function() { canvasBg = this.value; redraw(); };
 
@@ -1171,7 +1222,16 @@ const SONGS = [
   { title:"Clairo — Slow Dance",                              emoji:"🪩", file:"music/Slow Dance - Clairo.mp3",                                                                           quote:"♪ When the moon begins to hide, It's not over ♪" },
   { title:"The Velvet Underground — After Hours",             emoji:"🌙", file:"music/After Hours - The Velvet Underground.mp3",                                                          quote:"♪ If you close the door, the night could last forever ♪" },
   { title:"Chris de Burgh — The Lady In Red",                 emoji:"❤️", file:"music/The Lady In Red - Chris De Burgh.mp3",                                                             quote:"♪ It's just you and me ♪" },
-  { title:"Самое Большое Простое Число — Маленькие человечки",emoji:"🫧", file:"music/Маленькие человечки 2010 - Samoe Bolshoe Prostoe Chislo.mp3",                                     quote:"♪ Они очень любят нас неумех ♪" }
+  { title:"Самое Большое Простое Число — Маленькие человечки",emoji:"🫧", file:"music/Маленькие человечки 2010 - Samoe Bolshoe Prostoe Chislo.mp3",                                     quote:"♪ Они очень любят нас неумех ♪" },
+  { title:"John Lennon — Imagine",                            emoji:"☮️", file:"music/Imagine - john lenon.mp3",                                                                          quote:"♪ You may say Im a dreamer, but I'm not the only one ♪" },
+  { title:"Louis Armstrong — What a Wonderful World",         emoji:"🌈", file:"music/What A Wonderful World - Louis Armstrong.mp3",                                                       quote:"♪ I see skies of blue... clouds of white, Bright blessed days... dark sacred nights, And I think to myself ... what a wonderful world... ♪" },
+  { title:"Frank Sinatra — That's Life",                      emoji:"🎩", file:"music/That s Life - Frank Sinatra.mp3",                                                                    quote:"♪ Each time I find myself, laying flat on my face, I just pick myself up and get back in the race ♪" },
+  { title:"Motorama — Ghost",                                 emoji:"👻", file:"music/Ghost - Motorama.mp3",                                                                              quote:"♪ Your voice is pure and soft, It's throwing me back to my hopes ♪" },
+  { title:"Alex G — Waiting For You",                         emoji:"🕰️", file:"music/Waiting For You - AlexG.mp3",                                                                       quote:"♪ Waiting for you ♪" },
+  { title:"Coma Cinema — caroline, please kill me",           emoji:"🥀", file:"music/coma cinema - caroline, please kill me.mp3",                                                         quote:"♪ I don't know you, but I know you are beautiful ♪" },
+  { title:"Платина — Гикаю",                                  emoji:"💎", file:"music/Гикаю - Платина.mp3",                                                                               quote:"♪ Мои мозги полетели на Нептун Ги-ги-ги-ги-гикаю ♪" },
+  { title:"Петар Мартич — Жить здорово",                      emoji:"🥂", file:"music/Жить здорово - Петар Мартич.mp3",                                                                    quote:"♪ Но я отказываюсь быть озлобленным, быть сломанным, Я продолжу говорить: Жить здорово ♪" },
+  { title:"размаха — чайка",                                  emoji:"🕊️", file:"music/чайка - размаха.mp3",                                                                              quote:"♪ Я бы хотела быть как та чайка, летать под небом, что-то чайкать ♪" }
 ];
 const FINAL_MESSAGES = [
   "Мари, ты крутая!","Продолжай в том же духе",
