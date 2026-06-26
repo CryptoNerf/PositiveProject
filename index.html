@@ -523,9 +523,9 @@ function openChat() {
   document.getElementById("chat-fab").classList.remove("has-new");
   lockScroll();
   markRead();
-  pinBottom = true;          // при открытии всегда показываем конец переписки
-  scrollBottom();
-  setTimeout(scrollBottom, 80);
+  // удерживаем конец переписки ~2с, пока подгружаются картинки (иначе чат «уносит»
+  // в середину, когда картинки увеличивают высоту списка уже после прокрутки)
+  stickToBottom(2000);
 }
 function closeChat() {
   document.getElementById("chat-drawer").classList.remove("open");
@@ -606,9 +606,9 @@ function buildMsgEl(docId, data) {
     img.src = data.imageUrl; img.loading = "lazy"; img.alt = "картинка";
     img.onclick = () => openLightbox(data.imageUrl);
     // Картинки грузятся асинхронно и увеличивают высоту списка уже ПОСЛЕ того, как
-    // мы прокрутили вниз — из-за этого чат «открывается в середине». Пока прилипли
-    // к низу — до-прокручиваем после загрузки каждой картинки.
-    img.addEventListener("load", () => { if (pinBottom) scrollBottom(); });
+    // мы прокрутили вниз — из-за этого чат «открывается в середине». Пока держим низ
+    // (pinBottom) — короткой серией кадров до-прокручиваем после загрузки картинки.
+    img.addEventListener("load", () => { if (pinBottom) stickToBottom(250); });
     bubble.appendChild(img);
   }
   if (data.text) {
@@ -685,20 +685,40 @@ function refreshAllTicks() {
 
 // ─ Scroll ──────────────────────────────────
 const scrollDownBtn = document.getElementById("scroll-down");
-// Пока true — держим список «прилипшим» к низу (в т.ч. пока догружаются картинки).
-// Сбрасывается, как только пользователь сам прокручивает вверх.
+const chatList = document.getElementById("chat-messages");
+// pinBottom — держим низ, пока пользователь сам не ушёл вверх.
 let pinBottom = true;
-document.getElementById("chat-messages").addEventListener("scroll", () => {
-  const el = document.getElementById("chat-messages");
-  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
-  pinBottom = atBottom;
+// stickUntil — пока это время не истекло, КАЖДЫЙ кадр насильно ставим scrollTop в
+// самый низ. Это переживает асинхронную догрузку картинок (которая на iOS меняет
+// высоту списка уже после прокрутки и «уносит» чат в середину).
+let stickUntil = 0, stickRAF = 0;
+
+chatList.addEventListener("scroll", () => {
+  const atBottom = chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight < 60;
+  // во время «залипания» к низу не сбрасываем pinBottom (scrollTop дёргается сами)
+  if (Date.now() >= stickUntil) pinBottom = atBottom;
   scrollDownBtn.classList.toggle("show", !atBottom);
 });
-scrollDownBtn.onclick = () => scrollBottom(true);
+// как только пользователь сам тронул список — прекращаем удержание низа
+["touchstart", "wheel", "pointerdown"].forEach(ev =>
+  chatList.addEventListener(ev, () => { stickUntil = 0; }, { passive: true }));
+scrollDownBtn.onclick = () => stickToBottom(600);
 
 function scrollBottom(smooth=false) {
-  const el = document.getElementById("chat-messages");
-  el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+  chatList.scrollTo({ top: chatList.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+}
+
+// Удерживаем низ переписки на время duration, пока догружаются картинки.
+function stickToBottom(duration=1800) {
+  pinBottom = true;
+  stickUntil = Date.now() + duration;
+  if (stickRAF) cancelAnimationFrame(stickRAF);
+  const step = () => {
+    if (Date.now() >= stickUntil) { stickRAF = 0; return; }
+    chatList.scrollTop = chatList.scrollHeight;
+    stickRAF = requestAnimationFrame(step);
+  };
+  stickRAF = requestAnimationFrame(step);
 }
 
 // ─ iOS keyboard ────────────────────────────
@@ -974,6 +994,53 @@ let canvasBg = "#ffffff";
 let activePointers = new Map();
 let pinchStart = { dist:0, size:0 };
 
+// ── Фактические границы эмодзи по пикселям (один раз на символ, с кешем) ──
+// measureText().actualBoundingBox* на iOS для эмодзи ненадёжен, поэтому рендерим
+// эмодзи на оффскрин-канву и ищем границы непрозрачных пикселей. Возвращаем (в долях
+// размера шрифта): ox/oy — смещение видимого центра глифа от точки отрисовки;
+// hw/hh — половина ширины/высоты видимого глифа. Так рамка и хит-тест точно совпадут.
+const _emojiMetricCache = new Map();
+const _MC_R = 72, _MC_PAD = 40, _MC_S = _MC_R + _MC_PAD * 2;
+const _mc = document.createElement("canvas");
+_mc.width = _mc.height = _MC_S;
+const _mctx = _mc.getContext("2d", { willReadFrequently: true });
+function emojiMetrics(char) {
+  let m = _emojiMetricCache.get(char);
+  if (m) return m;
+  const R = _MC_R, S = _MC_S;
+  _mctx.clearRect(0, 0, S, S);
+  _mctx.font = R + "px 'Apple Color Emoji','Segoe UI Emoji',serif";
+  _mctx.textAlign = "center";
+  _mctx.textBaseline = "middle";
+  _mctx.fillText(char, S / 2, S / 2);
+  let minX = S, minY = S, maxX = -1, maxY = -1;
+  try {
+    const data = _mctx.getImageData(0, 0, S, S).data;
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        if (data[(y * S + x) * 4 + 3] > 10) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+  } catch (_) { /* getImageData недоступен — используем запасной вариант */ }
+  if (maxX < 0) {
+    m = { ox: 0, oy: 0, hw: 0.5, hh: 0.5 };   // ничего не нашли — нейтральный квадрат
+  } else {
+    m = {
+      ox: ((minX + maxX + 1) / 2 - S / 2) / R,
+      oy: ((minY + maxY + 1) / 2 - S / 2) / R,
+      hw: (maxX - minX + 1) / 2 / R,
+      hh: (maxY - minY + 1) / 2 / R
+    };
+  }
+  _emojiMetricCache.set(char, m);
+  return m;
+}
+
 function redraw() {
   ctx.clearRect(0, 0, cvs.width, cvs.height);
   ctx.fillStyle = canvasBg;
@@ -992,31 +1059,26 @@ function redraw() {
     ctx.restore();
   }
   emojis.forEach((e, i) => {
+    const mm = emojiMetrics(e.char);
+    const offX = mm.ox * e.size, offY = mm.oy * e.size;
     ctx.save();
     ctx.translate(e.cx, e.cy);
     ctx.rotate(e.rot || 0);
     ctx.font = e.size + "px 'Apple Color Emoji','Segoe UI Emoji',serif";
     ctx.textAlign    = "center";
     ctx.textBaseline = "middle";
-    // Часть эмодзи (✍️, ✌️ и др. с variation-selector) рисуется со смещением от
-    // геометрического центра — глиф «уезжает» из рамки выделения и хуже ловится при
-    // перетаскивании. Центрируем по фактическим границам нарисованного глифа.
-    const m = ctx.measureText(e.char);
-    const offX = (isFinite(m.actualBoundingBoxLeft) && isFinite(m.actualBoundingBoxRight))
-      ? (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2 : 0;
-    const offY = (isFinite(m.actualBoundingBoxAscent) && isFinite(m.actualBoundingBoxDescent))
-      ? (m.actualBoundingBoxDescent - m.actualBoundingBoxAscent) / 2 : 0;
-    // Отражение по горизонтали: scale(-1,1) вокруг центра глифа (ink уже в 0,0).
+    // Сдвигаем отрисовку так, чтобы ВИДИМЫЙ центр глифа оказался ровно в (0,0).
+    // Отражение по горизонтали: scale(-1,1) вокруг этого же центра.
     ctx.save();
     if (e.flipX) ctx.scale(-1, 1);
     ctx.fillText(e.char, -offX, -offY);
     ctx.restore();
     if (i === selIdx) {
-      const r = e.size * 0.58;
+      const hw = mm.hw * e.size + 5, hh = mm.hh * e.size + 5;
       ctx.strokeStyle = "rgba(255,105,180,.85)";
       ctx.lineWidth = 2;
       ctx.setLineDash([5,4]);
-      ctx.strokeRect(-r, -r, r*2, r*2);
+      ctx.strokeRect(-hw, -hh, hw*2, hh*2);
       ctx.setLineDash([]);
     }
     ctx.restore();
@@ -1037,7 +1099,11 @@ function hitTest(x, y) {
     const cos = Math.cos(-(e.rot||0)), sin = Math.sin(-(e.rot||0));
     const dx = x-e.cx, dy = y-e.cy;
     const lx = dx*cos - dy*sin, ly = dx*sin + dy*cos;
-    if (Math.abs(lx) < e.size*.6 && Math.abs(ly) < e.size*.6) return i;
+    // зона нажатия = фактический глиф (центр в cx,cy) + небольшой запас на палец
+    const mm = emojiMetrics(e.char);
+    const hw = Math.max(mm.hw * e.size, e.size * 0.22) + 6;
+    const hh = Math.max(mm.hh * e.size, e.size * 0.22) + 6;
+    if (Math.abs(lx) < hw && Math.abs(ly) < hh) return i;
   }
   return -1;
 }
