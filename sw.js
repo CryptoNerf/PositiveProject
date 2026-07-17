@@ -1,4 +1,4 @@
-const CACHE = 'positive-v2';
+const CACHE = 'positive-v3';
 const PRECACHE = ['./', './index.html', './image/клеткафон.jpg', './manifest.json'];
 
 self.addEventListener('install', e => {

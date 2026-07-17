@@ -9,3 +9,7 @@
 .vscode/
 .idea/
 *.swp
+
+# PNG-исходники картинок — сайт использует только .webp
+image/trash/*.png
+image/fashion item/*.png

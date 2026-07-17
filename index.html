@@ -81,7 +81,7 @@ audio { display:none; }
 .celebration { text-align:center;padding:14px 8px;border:4px dashed var(--pink);background:#fff; }
 .celebration h2 { font-size:1.6rem;color:var(--blue);text-shadow:2px 2px 0 var(--pink);animation:wiggle 1.5s ease-in-out infinite; }
 .celebration p { margin-top:8px;font-size:1rem; }
-.hearts { position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:10; }
+.hearts { position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:250; }
 .heart { position:absolute;font-size:2rem;animation:floatUp linear forwards;user-select:none; }
 @keyframes floatUp { 0%{transform:translateY(0) rotate(0deg) scale(.8);opacity:1}100%{transform:translateY(-110vh) rotate(720deg) scale(1.4);opacity:0} }
 .confetti { position:fixed;top:-20px;width:10px;height:14px;pointer-events:none;animation:fall linear forwards;z-index:9;border:1px solid #000; }
@@ -208,6 +208,43 @@ audio { display:none; }
 #send-collage-btn{background:var(--pink)!important;border-color:var(--pink)!important;color:#fff!important}
 #del-emoji-btn{background:#ffe0e0!important;border-color:#f88!important}
 
+/* ══ FASHION FINDS (модные находки у мусорки) ══ */
+#fashion-fab { position:fixed;bottom:calc(90px + var(--safe-b));right:20px;width:54px;height:54px;font-size:1.5rem;font-family:inherit;background:var(--blue);color:#fff;border:4px outset var(--blue);cursor:pointer;z-index:100;display:none;align-items:center;justify-content:center;box-shadow:3px 3px 0 rgba(0,0,0,.2); }
+#fashion-fab:active { border-style:inset; }
+#fashion-page { position:fixed;top:0;left:0;right:0;height:var(--app-height,100dvh);z-index:155;display:flex;flex-direction:column;background:var(--pink-bg);transform:translateY(100%);visibility:hidden;pointer-events:none;will-change:transform;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear .38s; }
+#fashion-page.open { transform:translateY(0);visibility:visible;pointer-events:auto;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility 0s linear 0s; }
+.fash-hdr { display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--safe-t)) 14px 10px;background:var(--pink);border-bottom:4px solid var(--ink);flex-shrink:0;color:#fff;font-size:1.05rem;font-weight:bold; }
+.fash-hdr button { background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer;font-family:inherit;padding:2px 6px; }
+.fash-tabs { display:flex;gap:8px;padding:8px 12px;background:#fff;border-bottom:2px dotted var(--pink);flex-shrink:0;justify-content:center; }
+.fash-tab { flex:1;max-width:220px;padding:7px 10px;font-family:inherit;font-size:.9rem;font-weight:bold;border:3px outset var(--blue);background:var(--blue-bg);cursor:pointer; }
+.fash-tab.active { border-style:inset;background:var(--pink-bg);border-color:var(--pink); }
+.fash-body { flex:1;overflow-y:auto;padding:14px 12px calc(16px + var(--safe-b));-webkit-overflow-scrolling:touch; }
+
+/* уличная сцена: небо + асфальт, бак и вещь стоят на «земле» */
+.street-scene { position:relative;max-width:560px;margin:0 auto;border:5px double var(--pink);background:linear-gradient(180deg,#d9efff 0%,#f2faff 72%,#cfc9bf 72%,#b9b2a6 100%);display:flex;align-items:flex-end;justify-content:center;gap:6%;height:clamp(280px,46vh,430px);padding:0 16px 30px;overflow:hidden; }
+.street-scene::before { content:"🌤️";position:absolute;top:12px;left:16px;font-size:3.4rem; }
+#street-bin { height:76%;max-width:52%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 10px 7px rgba(0,0,0,.22)); }
+.item-spot { height:100%;max-width:40%;display:flex;align-items:flex-end;justify-content:center;position:relative; }
+@keyframes twinkle { 0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)} }
+#street-item { max-width:100%;object-fit:contain;object-position:bottom;transform:rotate(-4deg);transform-origin:center bottom;filter:drop-shadow(0 8px 6px rgba(0,0,0,.25));transition:transform .6s cubic-bezier(.5,-.3,1,1),opacity .6s ease-in; }
+#street-item.fly-away { transform:translateY(-70px) scale(.05) rotate(30deg);opacity:0; }
+.find-caption { text-align:center;font-size:.95rem;margin:12px auto 0;max-width:560px; }
+#claim-btn { margin:10px auto 0; }
+.claimed-note { display:none;text-align:center;font-weight:bold;color:var(--pink);font-size:.95rem;max-width:560px;margin:14px auto 0;background:#fff;border:4px dashed var(--pink);padding:12px 14px; }
+
+.bin-picker { max-width:560px;margin:16px auto 0;background:#fff;border:4px dashed var(--blue);padding:10px 10px 6px; }
+.bp-title { font-size:.8rem;color:#888;margin-bottom:8px;text-align:center; }
+.bin-thumbs { display:flex;gap:8px;overflow-x:auto;padding-bottom:6px; }
+.bin-thumb { width:56px;height:56px;flex-shrink:0;object-fit:contain;background:var(--blue-bg);border:3px solid transparent;cursor:pointer;padding:3px;box-sizing:content-box; }
+.bin-thumb.active { border-color:var(--pink);background:var(--pink-bg); }
+
+.wardrobe-head { text-align:center;font-size:1.05rem;margin:2px 0 12px;font-weight:bold;color:var(--pink);text-shadow:2px 2px 0 var(--blue-bg); }
+.wardrobe-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;max-width:900px;margin:0 auto; }
+.w-item { background:#fff;border:4px double var(--pink);padding:10px 8px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:2px 2px 0 rgba(0,0,0,.08); }
+.w-item img { height:110px;max-width:100%;object-fit:contain; }
+.w-date { font-size:.68rem;color:#999; }
+.wardrobe-empty { text-align:center;color:#888;font-size:.9rem;padding:36px 12px; }
+
 /* ══ LIGHTBOX ══ */
 #lightbox { position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;cursor:zoom-out; }
 #lightbox.open{display:flex}
@@ -273,6 +310,9 @@ audio { display:none; }
 <!-- ══ CHAT FAB ══ -->
 <button id="chat-fab" aria-label="Открыть чат">💬</button>
 
+<!-- ══ FASHION FAB ══ -->
+<button id="fashion-fab" aria-label="Модные находки">👗</button>
+
 <!-- ══ CHAT DRAWER ══ -->
 <div id="chat-drawer">
   <div class="chat-hdr">
@@ -328,6 +368,38 @@ audio { display:none; }
     <button id="dup-emoji-btn">⧉ Копия</button>
     <button id="clear-canvas-btn">✕ Очистить</button>
     <button id="send-collage-btn">Отправить 💌</button>
+  </div>
+</div>
+
+<!-- ══ FASHION FINDS ══ -->
+<div id="fashion-page">
+  <div class="fash-hdr">
+    <span>👗 Модные находки</span>
+    <button id="close-fashion-btn" title="Закрыть">✕</button>
+  </div>
+  <div class="fash-tabs">
+    <button class="fash-tab active" id="tab-street">🗑️ Улица</button>
+    <button class="fash-tab" id="tab-wardrobe">👗 Гардероб</button>
+  </div>
+  <div class="fash-body">
+    <section id="fash-street">
+      <div class="street-scene">
+        <div class="item-spot"><img id="street-item" alt="модная находка"></div>
+        <img id="street-bin" alt="мусорный бак">
+      </div>
+      <p class="find-caption" id="find-caption">Смотри, что сегодня лежит у мусорки! ✨</p>
+      <button class="big-btn" id="claim-btn">Забрать себе 💖</button>
+      <div class="claimed-note" id="claimed-note"></div>
+      <div class="bin-picker">
+        <div class="bp-title">🗑️ Выбери свой мусорный бак:</div>
+        <div class="bin-thumbs" id="bin-thumbs"></div>
+      </div>
+    </section>
+    <section id="fash-wardrobe" style="display:none">
+      <div class="wardrobe-head">👗 Гардероб Мари</div>
+      <div class="wardrobe-grid" id="wardrobe-grid"></div>
+      <div class="wardrobe-empty" id="wardrobe-empty">Пока пусто... Загляни, что лежит на улице 🗑️✨</div>
+    </section>
   </div>
 </div>
 
@@ -413,10 +485,11 @@ auth.onAuthStateChanged(user => {
     showApp();
     startChatListener();
     startPresence();
+    startWardrobe();
   } else {
     currentUser = null; currentUsername = "";
-    closeChat(); closeBuilder();
-    stopChatListener(); stopPresence();
+    closeChat(); closeBuilder(); closeFashion();
+    stopChatListener(); stopPresence(); stopWardrobe();
     showLogin();
   }
 });
@@ -465,6 +538,7 @@ function showLogin() {
   document.getElementById("login-overlay").style.display = "flex";
   document.getElementById("main-container").style.display = "none";
   document.getElementById("chat-fab").style.display = "none";
+  document.getElementById("fashion-fab").style.display = "none";
   document.getElementById("login-name").value = "";
   document.getElementById("login-pass").value = "";
   document.getElementById("login-error").textContent = "";
@@ -475,6 +549,7 @@ function showApp() {
   mc.style.display = "";
   mc.style.visibility = ""; // сброс на случай если выход произошёл во время анимации
   document.getElementById("chat-fab").style.display = "flex";
+  document.getElementById("fashion-fab").style.display = "flex";
   buildBackground();
   updateStreakBadge();
   const st = getState();
@@ -510,6 +585,7 @@ function lockScroll() {
   }
 }
 function unlockScroll() {
+  if (_lockDepth === 0) return; // страховка: close-функции зовутся и для закрытых окон
   if (--_lockDepth === 0) {
     Object.assign(document.body.style, { position:'', top:'', left:'', right:'', overflow:'' });
     window.scrollTo(0, _lockScrollY);
@@ -1244,6 +1320,177 @@ function closeBuilder() {
     }
   }, 420);
 }
+
+// ═══════════════════════════════════════════
+// FASHION FINDS (модные находки у мусорки)
+// ═══════════════════════════════════════════
+const TRASH_BINS = Array.from({length:15}, (_,i)=>i+1);
+// Поправка размера отдельных баков: 3 — большой уличный контейнер,
+// 13 — открытая крышка «съедает» высоту самого бака в кадре
+const BIN_SCALE = { 3: 1.08, 13: 1.15 };
+// в папке fashion item файла 15.png нет — номера идут 1..14, 16..52
+const FASHION_ITEMS = Array.from({length:52}, (_,i)=>i+1).filter(n=>n!==15);
+// Точечная поправка масштаба вещи (доля высоты сцены) — для вещей, снятых
+// в нетипичном ракурсе, где авто-масштаб по пропорциям ошибается.
+// 52 — тапочки, сняты сверху: картинка вертикальная, но вещь маленькая.
+const ITEM_SCALE = { 52: 0.30 };
+const binSrc  = n => "image/trash/"+n+".webp";
+const itemSrc = n => "image/fashion item/"+n+".webp";
+
+// Номер дня по локальному времени — общий «календарь» для обоих
+function localDayNum(){ const d=new Date(); return Math.floor((d.getTime()-d.getTimezoneOffset()*60000)/864e5); }
+
+// Детерминированный ГПСЧ: одинаковая последовательность на любом устройстве
+function mulberry32(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+// Вещь дня: круг из 51 дня — случайная перестановка без повторов,
+// новый круг — новая перестановка. Всё считается от даты, сервер не нужен.
+function itemForDay(day){
+  const n = FASHION_ITEMS.length;
+  const cycle = Math.floor(day/n);
+  const rng = mulberry32((cycle+1)*2654435761 % 4294967296);
+  const idx = Array.from({length:n}, (_,i)=>i);
+  for (let i=n-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  return FASHION_ITEMS[idx[day % n]];
+}
+
+// ─ Гардероб (Firestore, общий у Эмиля и Мари) ─
+let wardrobeUnsub = null;
+const wardrobe = new Map();   // day → { item, day, takenBy, takenAt }
+function startWardrobe(){
+  if (wardrobeUnsub) return;
+  wardrobeUnsub = db.collection("wardrobe").onSnapshot(snap=>{
+    wardrobe.clear();
+    snap.forEach(doc=>wardrobe.set(Number(doc.id), doc.data()));
+    renderFashion();
+  }, err=>console.error("wardrobe:", err));
+}
+function stopWardrobe(){ if (wardrobeUnsub){ wardrobeUnsub(); wardrobeUnsub=null; } wardrobe.clear(); }
+
+// ─ Страница ─
+let fashInited = false;
+function initFashionDOM(){
+  if (fashInited) return; fashInited = true;
+  const thumbs = document.getElementById("bin-thumbs");
+  TRASH_BINS.forEach(n=>{
+    const t=document.createElement("img");
+    t.className="bin-thumb"; t.src=binSrc(n); t.loading="lazy"; t.alt="бак "+n;
+    t.onclick=()=>{ localStorage.setItem("fashionBin", n); renderFashion(); };
+    thumbs.appendChild(t);
+  });
+  document.getElementById("claim-btn").onclick = claimToday;
+  document.getElementById("tab-street").onclick   = ()=>switchFashTab("street");
+  document.getElementById("tab-wardrobe").onclick = ()=>switchFashTab("wardrobe");
+}
+function switchFashTab(tab){
+  document.getElementById("tab-street").classList.toggle("active", tab==="street");
+  document.getElementById("tab-wardrobe").classList.toggle("active", tab==="wardrobe");
+  document.getElementById("fash-street").style.display   = tab==="street" ? "" : "none";
+  document.getElementById("fash-wardrobe").style.display = tab==="wardrobe" ? "" : "none";
+}
+function currentBin(){ const n=Number(localStorage.getItem("fashionBin")); return TRASH_BINS.includes(n)?n:1; }
+
+function renderFashion(){
+  if (!fashInited) return;
+  // выбранный бак (с индивидуальной поправкой размера)
+  const binImg = document.getElementById("street-bin");
+  binImg.src = binSrc(currentBin());
+  binImg.style.height = (76 * (BIN_SCALE[currentBin()] || 1)) + "%";
+  [...document.querySelectorAll(".bin-thumb")].forEach((t,i)=>t.classList.toggle("active", TRASH_BINS[i]===currentBin()));
+  // вещь дня / уже забрана
+  const day = localDayNum(), taken = wardrobe.get(day);
+  const spot = document.querySelector(".item-spot");
+  const cap  = document.getElementById("find-caption");
+  const btn  = document.getElementById("claim-btn");
+  const note = document.getElementById("claimed-note");
+  if (taken){
+    spot.style.visibility="hidden"; cap.style.display="none"; btn.style.display="none";
+    note.style.display="block";
+    note.textContent = (taken.takenBy==="Mari" ? "Mari уже забрала" : "Emile уже забрал")
+      + " сегодняшнюю находку 💝 Завтра у мусорки появится что-то новенькое!";
+  } else {
+    spot.style.visibility=""; cap.style.display=""; btn.style.display=""; btn.disabled=false;
+    note.style.display="none";
+    const img = document.getElementById("street-item");
+    img.classList.remove("fly-away");
+    // реалистичный масштаб от пропорций картинки: обувь/очки ниже, платья/пальто выше
+    const itemN = itemForDay(day);
+    const fit = () => {
+      const r = img.naturalHeight / (img.naturalWidth || 1);
+      img.style.height = ((ITEM_SCALE[itemN] || (r <= 0.62 ? 0.30 : r >= 1.15 ? 0.52 : 0.40)) * 100) + "%";
+    };
+    img.onload = fit;
+    img.src = itemSrc(itemN);
+    if (img.complete && img.naturalWidth) fit();
+  }
+  // гардероб: одна и та же вещь из разных кругов показывается один раз
+  const grid = document.getElementById("wardrobe-grid");
+  const seen = new Set();
+  const entries = [...wardrobe.values()].sort((a,b)=>a.day-b.day).filter(e=>!seen.has(e.item)&&seen.add(e.item));
+  grid.innerHTML = "";
+  entries.slice().reverse().forEach(e=>{
+    const cell=document.createElement("div"); cell.className="w-item";
+    const im=document.createElement("img"); im.src=itemSrc(e.item); im.loading="lazy"; im.alt="находка";
+    const dt=document.createElement("div"); dt.className="w-date";
+    const when = e.takenAt && e.takenAt.toDate ? e.takenAt.toDate()
+               : new Date(e.day*864e5 + new Date().getTimezoneOffset()*60000);
+    dt.textContent = "найдено " + when.toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
+    cell.append(im,dt); grid.appendChild(cell);
+  });
+  document.getElementById("wardrobe-empty").style.display = entries.length ? "none" : "";
+  document.getElementById("tab-wardrobe").textContent = "👗 Гардероб" + (entries.length ? ` (${entries.length})` : "");
+}
+
+let claiming = false;
+async function claimToday(){
+  const day = localDayNum();
+  if (claiming || !currentUser || wardrobe.has(day)) return;
+  claiming = true;
+  const btn = document.getElementById("claim-btn"); btn.disabled = true;
+  document.getElementById("street-item").classList.add("fly-away");
+  launchHearts(18);
+  // даём анимации улететь до того, как snapshot перерисует сцену
+  await new Promise(r=>setTimeout(r, 550));
+  try {
+    await db.collection("wardrobe").doc(String(day)).set({
+      item: itemForDay(day), day,
+      takenBy: currentUsername,
+      takenAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e){
+    console.error("claim:", e);
+    document.getElementById("street-item").classList.remove("fly-away");
+    btn.disabled = false;
+  } finally { claiming = false; }
+}
+
+function openFashion(){
+  initFashionDOM();
+  document.getElementById("main-container").style.visibility = 'hidden';
+  lockScroll();
+  renderFashion();
+  switchFashTab("street");
+  document.getElementById("fashion-page").classList.add("open");
+}
+function closeFashion(){
+  const page = document.getElementById("fashion-page");
+  if (!page.classList.contains("open")) return;
+  page.classList.remove("open");
+  unlockScroll();
+  setTimeout(()=>{
+    if (!document.getElementById("chat-drawer").classList.contains("open") &&
+        !document.getElementById("emoji-builder").classList.contains("open") &&
+        !document.getElementById("fashion-page").classList.contains("open")) {
+      document.getElementById("main-container").style.visibility = '';
+    }
+  }, 420);
+}
+document.getElementById("fashion-fab").onclick = openFashion;
+document.getElementById("close-fashion-btn").onclick = closeFashion;
+// вернулись во вкладку/пережили полночь с открытой страницей — пересчитать день
+document.addEventListener("visibilitychange", ()=>{
+  if (!document.hidden && document.getElementById("fashion-page").classList.contains("open")) renderFashion();
+});
 
 // ═══════════════════════════════════════════
 // BACKGROUND
