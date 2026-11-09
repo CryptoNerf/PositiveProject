@@ -1159,7 +1159,28 @@ function redraw() {
     }
     ctx.restore();
   });
+  saveDraft();
 }
+
+// ── Черновик коллажа: переживает перезагрузку страницы / закрытие PWA ──
+const DRAFT_KEY = "collageDraft";
+let _draftTimer = null;
+function saveDraft() {
+  clearTimeout(_draftTimer);
+  _draftTimer = setTimeout(() => {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ emojis, canvasBg })); } catch (_) {}
+  }, 300);
+}
+try {
+  const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+  if (d && Array.isArray(d.emojis)) {
+    emojis = d.emojis;
+    if (typeof d.canvasBg === "string") {
+      canvasBg = d.canvasBg;
+      document.getElementById("bg-color").value = canvasBg;
+    }
+  }
+} catch (_) {}
 
 function cvsXY(clientX, clientY) {
   const rc = cvs.getBoundingClientRect();
@@ -1186,17 +1207,37 @@ function hitTest(x, y) {
 
 function pinchDist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
+// Начать перетаскивание выбранного эмодзи из точки (x,y) холста
+function startDragAt(x, y) {
+  if (selIdx === -1) { isDragging = false; return; }
+  isDragging = true;
+  dOff = { x: x - emojis[selIdx].cx, y: y - emojis[selIdx].cy };
+}
+
+function resetPointers() {
+  activePointers.clear();
+  isDragging = false;
+  pinchStart = { dist:0, size:0 };
+}
+
 cvs.addEventListener("pointerdown", e => {
   e.preventDefault();
+  // iOS иногда «теряет» pointerup/pointercancel (клавиатура эмодзи, жест у края экрана),
+  // и в activePointers остаются «призрачные» касания: тогда одно касание считалось щипком
+  // (эмодзи менял размер вместо перемещения), а при 3+ призраках холст переставал отвечать.
+  // Первое касание нового жеста (isPrimary) — гарантированно пальцев на экране больше нет.
+  if (e.isPrimary) resetPointers();
+  try { cvs.setPointerCapture(e.pointerId); } catch (_) {}
   activePointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+  if (activePointers.size > 2) return;  // третий палец игнорируем
   if (activePointers.size === 1) {
     const {x,y} = cvsXY(e.clientX, e.clientY);
     const hit = hitTest(x, y);
     if (hit !== -1) {
       // Select & start dragging existing emoji
       const [em] = emojis.splice(hit, 1); emojis.push(em);
-      selIdx = emojis.length-1; isDragging = true;
-      dOff = { x: x-em.cx, y: y-em.cy };
+      selIdx = emojis.length-1;
+      startDragAt(x, y);
     } else {
       // Tap on empty space — remember canvas position
       selIdx = -1; isDragging = false;
@@ -1216,6 +1257,7 @@ cvs.addEventListener("pointerdown", e => {
 
 cvs.addEventListener("pointermove", e => {
   e.preventDefault();
+  if (!activePointers.has(e.pointerId)) return;  // движение без pointerdown на холсте
   activePointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
   if (activePointers.size === 2 && selIdx !== -1) {
     const pts = [...activePointers.values()];
@@ -1232,15 +1274,31 @@ cvs.addEventListener("pointermove", e => {
   }
 }, { passive:false });
 
-cvs.addEventListener("pointerup",     e => { activePointers.delete(e.pointerId); if (!activePointers.size) isDragging = false; });
-cvs.addEventListener("pointercancel", e => { activePointers.delete(e.pointerId); isDragging = false; });
+function onPointerEnd(e) {
+  if (!activePointers.delete(e.pointerId)) return;
+  if (activePointers.size === 1) {
+    // Щипок закончился, один палец остался — продолжаем перетаскивание с его позиции без скачка
+    const p = [...activePointers.values()][0];
+    const {x,y} = cvsXY(p.x, p.y);
+    startDragAt(x, y);
+  } else if (!activePointers.size) {
+    isDragging = false;
+  }
+}
+cvs.addEventListener("pointerup",          onPointerEnd);
+cvs.addEventListener("pointercancel",      onPointerEnd);
+cvs.addEventListener("lostpointercapture", onPointerEnd);
+// Подстраховка: палец отпущен за пределами холста, вкладка свернулась и т.п.
+window.addEventListener("pointerup",     onPointerEnd);
+window.addEventListener("pointercancel", onPointerEnd);
+window.addEventListener("blur", resetPointers);
+document.addEventListener("visibilitychange", resetPointers);
 
 // iOS blurs focused inputs when a touch ends on a non-input element.
 // preventDefault() on touchend blocks that cleanup, keeping keyboard open.
 cvs.addEventListener("touchend", e => {
   if (pendingPos !== null && !isDragging) e.preventDefault();
 }, { passive: false });
-cvs.setPointerCapture = cvs.setPointerCapture || (() => {});
 
 function addEmojiToCanvas(char) {
   const cx = 70 + Math.random() * (cvs.width  - 140);
